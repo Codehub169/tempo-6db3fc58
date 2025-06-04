@@ -71,16 +71,17 @@ app = Flask(__name__, static_folder='build', static_url_path='/')
 def _perform_initial_setup() -> None:
     """
     Perform initial setup tasks, such as updating the repository.
-    If repository update fails, it logs a warning and continues. 
-    Other critical setup errors will cause the application to exit.
+    If repository update fails, it logs an error and causes the application to exit.
+    Other critical setup errors will also cause the application to exit.
     """
     try:
         _safe_print_stdout("Performing initial application setup...")
-        if update_repository():
-            _safe_print_stdout("Repository update successful.")
+        if not update_repository():
+            _safe_print_stderr("CRITICAL ERROR: Failed to update repository during initial setup. See logs above for details.")
+            _safe_print_stderr("Application will not start because repository update failed.")
+            sys.exit(1) # Exit if git pull fails
         else:
-            _safe_print_stderr("STARTUP WARNING: Failed to update repository during initial setup. See logs above for details.")
-            _safe_print_stderr("The application will continue to start with the current version. Please check git connectivity and repository status if updates are expected.")
+            _safe_print_stdout("Repository update successful.")
         _safe_print_stdout("Initial setup tasks finished. Application is ready to start.")
     except Exception as e:
         _safe_print_stderr(f"CRITICAL UNHANDLED ERROR during initial application setup: {str(e)} ({type(e).__name__})")
@@ -111,7 +112,7 @@ def api_status() -> Tuple[Response, int]:
 
 # --- Main Execution Block ---
 if __name__ == '__main__':
-    _perform_initial_setup() # Perform git pull and other setup tasks. Continues on git pull failure.
+    _perform_initial_setup() # Perform git pull and other setup tasks. Exits on git pull failure.
 
     # Strictly configure port to 9000
     configured_port = 9000

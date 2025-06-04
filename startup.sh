@@ -1,13 +1,23 @@
 #!/bin/sh
 
-# Set the port for the application
-export PORT=9000
+# Exit immediately if a command exits with a non-zero status.
+set -e
+# Treat unset variables as an error when substituting.
+set -u
 
-# Navigate to the directory where app.py is located, if necessary.
-# For example, if your app is in /opt/app:
-# cd /opt/app
+# Determine the script's directory and change to it.
+# This ensures that relative paths (like for app.py) work correctly
+# and that the application context is as expected.
+SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+cd "$SCRIPT_DIR"
+
+# Set the port for the application.
+# Uses the PORT environment variable if it's already set, otherwise defaults to 9000.
+export PORT=${PORT:-9000}
 
 echo "Starting application on port $PORT..."
-# Run the Python application.
-# Ensure 'python' points to a Python 3 interpreter or use 'python3'.
-python app.py
+
+# Run the Python application using exec to replace the shell process.
+# This is more efficient as it avoids leaving an unnecessary shell process running.
+# Ensure 'python' (or 'python3') points to your desired Python interpreter.
+exec python app.py

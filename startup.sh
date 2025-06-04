@@ -11,9 +11,8 @@ set -u
 SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
 cd "$SCRIPT_DIR"
 
-# Set the port for the application.
-# Uses the PORT environment variable if it's already set, otherwise defaults to 9000.
-export PORT=${PORT:-9000}
+# Set the port for the application strictly to 9000.
+export PORT=9000
 
 echo "Starting application on port $PORT..."
 

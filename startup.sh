@@ -1,33 +1,39 @@
 #!/bin/bash
 
-# Exit immediately if a command exits with a non-zero status.
+# Ensure script exits immediately if a command exits with a non-zero status.
 set -e
 
-echo "Starting up the application..."
+# Set the PORT environment variable, defaulting to 9000 if not already set
+export PORT=${PORT:-9000}
 
-# Set the port for the application
-export PORT=9000
-echo "Application will run on port $PORT"
+echo "PORT is set to $PORT"
 
-# (Optional) Add any build steps here if needed, e.g., for a frontend
-# echo "Running frontend build..."
-# Example: npm install --prefix ./frontend && npm run build --prefix ./frontend
-# (Ensure the output directory matches Flask's static_folder, e.g., copy to './build')
+# (Optional) Navigate to the app directory if startup.sh is in the root
+# Example: If your app.py is in /srv/app and startup.sh is in /srv
+# cd /srv/app
 
-# Navigate to the application directory if startup.sh is not at the root
-# cd /path/to/your/app
+# (Optional) Activate virtual environment if used
+# if [ -d "venv" ]; then
+#   echo "Activating virtual environment..."
+#   source venv/bin/activate
+# fi
 
-# Run the Python backend application using Gunicorn
-# Assumes your Flask app object is named 'app' in a file named 'app.py'
-# Gunicorn is a production-ready WSGI server.
-# Ensure Gunicorn is installed in your environment (e.g., in requirements.txt or installed globally)
-echo "Launching Gunicorn server for app:app on 0.0.0.0:$PORT..."
-exec gunicorn --bind 0.0.0.0:$PORT --workers 4 --log-level info app:app
+# (Optional) Run database migrations or other pre-start tasks
+# echo "Running database migrations (if any)..."
+# flask db upgrade # Example for Flask-Migrate
+# python manage.py migrate --noinput # Example for Django
 
-# Alternative for Flask's development server (not for production):
-# echo "Launching Flask development server..."
-# exec python app.py
+# The Python app (app.py) already contains logic to attempt a git pull during its startup.
 
-# Alternative for FastAPI with Uvicorn:
-# echo "Launching Uvicorn server for app:app on 0.0.0.0:$PORT..."
-# exec uvicorn app:app --host 0.0.0.0 --port $PORT --workers 4 --log-level info
+echo "Starting Gunicorn web server..."
+# Replace 'app:app' with 'your_module:your_flask_app_instance' if your Python file
+# is named differently or the Flask app object has a different name.
+# --workers: Adjust based on your server's CPU cores. A common recommendation is (2 * CPU_CORES) + 1.
+# --log-level: Set to 'info' or 'debug' for more verbose logging during startup/troubleshooting.
+# --access-logfile - and --error-logfile - to log to stdout/stderr for container environments
+exec gunicorn --bind 0.0.0.0:$PORT \
+             --workers ${GUNICORN_WORKERS:-4} \
+             --log-level ${GUNICORN_LOG_LEVEL:-info} \
+             --access-logfile '-' \
+             --error-logfile '-' \
+             app:app

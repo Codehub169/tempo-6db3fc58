@@ -3,8 +3,8 @@
 # Ensure script exits immediately if a command exits with a non-zero status.
 set -e
 
-# Set the PORT environment variable, defaulting to 9000 if not already set
-export PORT=${PORT:-9000}
+# Set the PORT environment variable strictly to 9000
+export PORT=9000
 
 echo "PORT is set to $PORT"
 

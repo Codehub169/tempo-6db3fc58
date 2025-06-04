@@ -63,12 +63,20 @@ app = Flask(__name__, static_folder='build', static_url_path='/')
 def _perform_initial_setup() -> None:
     """
     Perform initial setup tasks when the application module is loaded,
-    such as updating the repository.
-    This replaces the deprecated @app.before_first_request behavior.
+    such as updating the repository. Catches and logs unexpected errors.
     """
-    print("Performing initial application setup...")
-    update_repository()
-    print("Initial setup complete. Application is ready.")
+    try:
+        print("Performing initial application setup...")
+        update_repository()
+        print("Initial setup complete. Application is ready.")
+    except Exception as e:
+        try:
+            # Use sys.stderr for critical startup errors
+            print(f"CRITICAL ERROR during initial application setup: {str(e)}", file=sys.stderr)
+            print("Application may not function correctly or fully as expected.", file=sys.stderr)
+        except Exception:
+            # If logging critical error itself fails, there's not much more to do here
+            pass
 
 _perform_initial_setup()
 
@@ -94,16 +102,13 @@ def api_status() -> Tuple[Response, int]:
     """
     A sample API endpoint to check backend status.
     """
-    port_str = os.environ.get('PORT', '9000')
+    # PORT will be set by startup.sh, default to '9000' if somehow not set.
+    port_str = os.environ.get('PORT', '9000') 
     return jsonify(status="Backend is running", port=port_str), 200
 
 if __name__ == '__main__':
-    port_value = os.environ.get('PORT', '9000')
+    # For local development, strictly use port 9000
     configured_port = 9000
-    try:
-        configured_port = int(port_value)
-    except ValueError:
-        print(f"Warning: Invalid PORT environment variable '{port_value}'. Must be an integer. Using default port {configured_port}.", file=sys.stderr)
     
     print(f"Starting Flask development server on host 0.0.0.0, port {configured_port}...")
     app.run(host='0.0.0.0', port=configured_port)

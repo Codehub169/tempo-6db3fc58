@@ -37,7 +37,8 @@ def update_repository() -> bool:
             capture_output=True,
             text=True,
             check=False, # Does not raise CalledProcessError on non-zero exit
-            errors='replace'
+            errors='replace',
+            timeout=60  # Added timeout to prevent indefinite hanging
         )
 
         if result.returncode == 0:
@@ -56,6 +57,9 @@ def update_repository() -> bool:
 
     except FileNotFoundError:
         _safe_print_stderr("Git command not found. Make sure git is installed and in PATH. Skipping git pull.")
+        return False
+    except subprocess.TimeoutExpired:
+        _safe_print_stderr("Git pull command timed out after 60 seconds. Skipping git pull.")
         return False
     except Exception as e:
         _safe_print_stderr(f"An unexpected error occurred during git pull: {str(e)} ({type(e).__name__})")

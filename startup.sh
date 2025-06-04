@@ -1,39 +1,39 @@
 #!/bin/bash
+# This script starts the Python application on port 9000.
 
-# Ensure script exits immediately if a command exits with a non-zero status.
+# Exit immediately if a command exits with a non-zero status.
 set -e
 
-# Set the PORT environment variable strictly to 9000
-export PORT=9000
+# Ensure this script has execute permissions: chmod +x startup.sh
 
+# Set the port for the application.
+# The Python application (app.py) should be configured to read this PORT variable.
+export PORT=9000
 echo "PORT is set to $PORT"
 
-# (Optional) Navigate to the app directory if startup.sh is in the root
-# Example: If your app.py is in /srv/app and startup.sh is in /srv
-# cd /srv/app
+# Navigate to the directory where app.py is located, if necessary.
+# This ensures that relative paths for static files (e.g., 'build' folder)
+# and module imports work as expected.
+# Example: If your app.py is in /srv/app and this script is in /srv:
+# cd "$(dirname "$0")/app" # Navigate to 'app' subdirectory relative to script
+# Or simply: cd /srv/app
+
+echo "Starting Python application on port $PORT..."
 
 # (Optional) Activate virtual environment if used
+# Make sure the path to your virtual environment is correct.
 # if [ -d "venv" ]; then
 #   echo "Activating virtual environment..."
 #   source venv/bin/activate
+# elif [ -d ".venv" ]; then
+#   echo "Activating virtual environment (.venv)..."
+#   source .venv/bin/activate
 # fi
 
-# (Optional) Run database migrations or other pre-start tasks
-# echo "Running database migrations (if any)..."
-# flask db upgrade # Example for Flask-Migrate
-# python manage.py migrate --noinput # Example for Django
-
-# The Python app (app.py) already contains logic to attempt a git pull during its startup.
-
-echo "Starting Gunicorn web server..."
-# Replace 'app:app' with 'your_module:your_flask_app_instance' if your Python file
-# is named differently or the Flask app object has a different name.
-# --workers: Adjust based on your server's CPU cores. A common recommendation is (2 * CPU_CORES) + 1.
-# --log-level: Set to 'info' or 'debug' for more verbose logging during startup/troubleshooting.
-# --access-logfile - and --error-logfile - to log to stdout/stderr for container environments
-exec gunicorn --bind 0.0.0.0:$PORT \
-             --workers ${GUNICORN_WORKERS:-4} \
-             --log-level ${GUNICORN_LOG_LEVEL:-info} \
-             --access-logfile '-' \
-             --error-logfile '-' \
-             app:app
+# Run the Python application using 'exec'.
+# 'exec' replaces the shell process with the Python process, which is good practice
+# for process management and signal handling, especially in containerized environments.
+# Replace 'app.py' with the actual name of your main Python file if it's different.
+# Note: Using Flask's built-in development server (via python app.py) is not recommended for production.
+# For production, a WSGI server like Gunicorn should be used.
+exec python app.py

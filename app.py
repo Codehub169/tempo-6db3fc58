@@ -77,9 +77,9 @@ def _perform_initial_setup() -> None:
     try:
         _safe_print_stdout("Performing initial application setup...")
         if not update_repository():
-            _safe_print_stderr("WARNING: Failed to update repository during initial setup. See logs above for details.")
-            _safe_print_stderr("Application will continue with the existing codebase. Please check git logs for pull issues.")
-            # Not exiting here allows the application to start with existing code
+            _safe_print_stderr("CRITICAL: Failed to update repository during initial setup. See logs above for details.")
+            _safe_print_stderr("Application will exit as repository update failed.")
+            sys.exit(1)
         else:
             _safe_print_stdout("Repository update successful.")
         _safe_print_stdout("Initial setup tasks finished. Application is ready to start.")

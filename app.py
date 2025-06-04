@@ -25,10 +25,10 @@ def _safe_print_stderr(*args, **kwargs) -> None:
 
 
 # --- Git Update Logic ---
-def update_repository() -> None:
+def update_repository() -> bool:
     """
     Attempts to pull the latest changes from the git repository.
-    Raises RuntimeError if git pull fails or git is not found, to halt application startup.
+    Logs errors and returns False on failure. Returns True on success.
     """
     try:
         _safe_print_stdout("Attempting to pull latest changes from git...")
@@ -36,7 +36,7 @@ def update_repository() -> None:
             ['git', 'pull'],
             capture_output=True,
             text=True,
-            check=False,
+            check=False, # Does not raise CalledProcessError on non-zero exit
             errors='replace'
         )
 
@@ -44,6 +44,7 @@ def update_repository() -> None:
             _safe_print_stdout("Git pull successful.")
             if result.stdout and result.stdout.strip():
                 _safe_print_stdout(f"Git pull output:\n{result.stdout.strip()}")
+            return True
         else:
             error_message = f"Git pull command failed with exit status {result.returncode}."
             _safe_print_stderr(error_message)
@@ -51,14 +52,14 @@ def update_repository() -> None:
                 _safe_print_stderr(f"Git pull error output (stderr):\n{result.stderr.strip()}")
             if result.stdout and result.stdout.strip(): # stdout might also contain useful info
                 _safe_print_stderr(f"Git pull output (stdout on failure):\n{result.stdout.strip()}")
-            raise RuntimeError(f"Critical error: Git pull failed. Stderr: {result.stderr.strip() if result.stderr else 'N/A'}")
+            return False
 
     except FileNotFoundError:
         _safe_print_stderr("Git command not found. Make sure git is installed and in PATH. Skipping git pull.")
-        raise RuntimeError("Critical error: Git command not found. Cannot update repository.")
+        return False
     except Exception as e:
         _safe_print_stderr(f"An unexpected error occurred during git pull: {str(e)} ({type(e).__name__})")
-        raise RuntimeError(f"Critical error during git pull: {str(e)}")
+        return False
 
 # --- Flask Application Setup ---
 app = Flask(__name__, static_folder='build', static_url_path='/')
@@ -71,12 +72,12 @@ def _perform_initial_setup() -> None:
     """
     try:
         _safe_print_stdout("Performing initial application setup...")
-        update_repository()
-        _safe_print_stdout("Initial setup complete. Application is ready to start.")
-    except RuntimeError as e: # Catch specific critical errors from update_repository (git issues)
-        _safe_print_stderr(f"STARTUP WARNING: Failed to update repository during initial setup: {str(e)}")
-        _safe_print_stderr("The application will continue to start with the current version. Please check git connectivity and repository status if updates are expected.")
-        # Application continues, sys.exit(1) is removed for this specific case.
+        if update_repository():
+            _safe_print_stdout("Repository update successful.")
+        else:
+            _safe_print_stderr("STARTUP WARNING: Failed to update repository during initial setup. See logs above for details.")
+            _safe_print_stderr("The application will continue to start with the current version. Please check git connectivity and repository status if updates are expected.")
+        _safe_print_stdout("Initial setup tasks finished. Application is ready to start.")
     except Exception as e:
         _safe_print_stderr(f"CRITICAL UNHANDLED ERROR during initial application setup: {str(e)} ({type(e).__name__})")
         _safe_print_stderr("Application will not start due to an unexpected critical error.")

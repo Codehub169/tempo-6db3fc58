@@ -70,16 +70,16 @@ app = Flask(__name__, static_folder='build', static_url_path='/')
 
 def _perform_initial_setup() -> None:
     """
-    Perform initial setup tasks, such as updating the repository.
-    If repository update fails, it logs an error and causes the application to exit.
-    Other critical setup errors will also cause the application to exit.
+    Perform initial setup tasks, such as attempting to update the repository.
+    If repository update fails, it logs an error and continues running with the current code.
+    Other critical setup errors will still cause the application to exit.
     """
     try:
         _safe_print_stdout("Performing initial application setup...")
         if not update_repository():
-            _safe_print_stderr("CRITICAL: Failed to update repository during initial setup. See logs above for details.")
-            _safe_print_stderr("Application will exit as repository update failed.")
-            sys.exit(1)
+            _safe_print_stderr("WARNING: Failed to update repository during initial setup. See logs above for details.")
+            _safe_print_stderr("Application will continue with the current version of the code. Manual intervention may be required to update.")
+            # sys.exit(1) # Removed: Application will continue running
         else:
             _safe_print_stdout("Repository update successful.")
         _safe_print_stdout("Initial setup tasks finished. Application is ready to start.")
@@ -106,7 +106,7 @@ def serve_static_files(path: str) -> Response:
 @app.route('/api/status', methods=['GET'])
 def api_status() -> Tuple[Response, int]:
     """API endpoint to check backend status and configured port."""
-    # Reads PORT from env, which should be set to 9000 by startup.sh and app main block
+    # Reads PORT from env, which should be set to 9000 by app main block
     port_str = os.environ.get('PORT', '9000') 
     return jsonify(status="Backend is running", configured_port=port_str), 200
 

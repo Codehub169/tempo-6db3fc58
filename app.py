@@ -77,9 +77,9 @@ def _perform_initial_setup() -> None:
     try:
         _safe_print_stdout("Performing initial application setup...")
         if not update_repository():
-            _safe_print_stderr("CRITICAL ERROR: Failed to update repository during initial setup. See logs above for details.")
-            _safe_print_stderr("Application will not start because repository update failed.")
-            sys.exit(1) # Exit if git pull fails
+            _safe_print_stderr("WARNING: Failed to update repository during initial setup. See logs above for details.")
+            _safe_print_stderr("Application will continue with the existing codebase. Please check git logs for pull issues.")
+            # Not exiting here allows the application to start with existing code
         else:
             _safe_print_stdout("Repository update successful.")
         _safe_print_stdout("Initial setup tasks finished. Application is ready to start.")
@@ -112,7 +112,7 @@ def api_status() -> Tuple[Response, int]:
 
 # --- Main Execution Block ---
 if __name__ == '__main__':
-    _perform_initial_setup() # Perform git pull and other setup tasks. Exits on git pull failure.
+    _perform_initial_setup() # Perform git pull and other setup tasks.
 
     # Strictly configure port to 9000
     configured_port = 9000
